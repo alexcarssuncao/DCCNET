@@ -3,7 +3,6 @@ from internet_checksum import checksum
 from typing import Union
 
 
-
 CONTROL_FLAGS = {
     'ACK': 0x80,
     'END': 0x40,
@@ -13,11 +12,17 @@ CONTROL_FLAGS = {
 SYNC: int = 0xDCC023C2
 
 
-
 class dccnet_frame(object):
 
 
     def __init__(self, frame: Union[bytes,None] = None) -> None:
+        
+        '''Creates a new dcc frame object. Can be called with a frame
+           received by either client or server.
+           
+           Receiver MUST use bytes.fromhex(socket.recvfrom()) before creating
+           a frame.
+        '''
        
         # The frame format:
         # 0        4        8        10        12    14    15
@@ -131,6 +136,9 @@ class dccnet_frame(object):
     # ________________________________________________________________________ #
      def parse_frame(self):
         
+        '''Breaks a dccnet frame into its components,
+            assigning correct values to its variables.
+        '''
         self.set_sync1()
         self.set_sync2()
         self.set_chksum()
@@ -138,6 +146,7 @@ class dccnet_frame(object):
         self.set_ID()
         self.set_flag()
         self.set_data()
+     #---
 
 
     def calculate_checksum(self) -> bytes:
@@ -147,24 +156,29 @@ class dccnet_frame(object):
         '''
         self.chksum = checksum(self.frame)
         return self.chksum
-    
+    #---
 
     def create_ack_frame(self, previous_ID):
         
+        '''Makes a dccnet frame with empty data, length zero,
+           and flag set to the ACK flag
+        '''
         ack_frame =  dccnet_frame(None)
         
-        ack_frame.set_sync1(0xDCC023C2)
-        ack_frame.set_sync2(0xDCC023C2)
+        ack_frame.set_sync1(SYNC)
+        ack_frame.set_sync2(SYNC)
         ack_frame.set_length(0)
         ack_frame.set_ID(~previous_ID)
         ack_frame.set_flag(CONTROL_FLAGS['ACK'])
         ack_frame.set_data(None)
         
         return ack_frame
-        
+    #---    
         
     def display_frame(self):
         
+        '''Prints the data frame field by field
+        '''
         print(f"SYNC1: {self.sync1.hex()}")
         print(f"SYNC2: {self.sync2.hex()}")
         print(f"Checksum: {self.chksum.hex()}")
@@ -172,4 +186,4 @@ class dccnet_frame(object):
         print(f"ID: {self.ID.hex()}")
         print(f"Flag: {self.flag.hex()}")
         print(f"Data: {self.data.hex()}")
-            
+    #---       
